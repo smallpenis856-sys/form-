@@ -246,10 +246,6 @@
 @media (max-width: 370px) {
   .page-width { width: calc(100% - 26px); }
   .form-card { padding-inline: 17px; }
-  .poster-copy { padding-inline: 18px; }
-  .poster-copy p { max-width: 70%; }
-  .poster-copy h1 { font-size: 50px; }
-  .field-poster { min-height: 245px; }
   .entry-detail dl { grid-template-columns: 1fr; }
 }
 @media (max-width: 500px) {

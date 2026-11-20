@@ -83,6 +83,13 @@ export async function downloadChallanPdf(svgElement: SVGSVGElement, title: strin
   clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
   clone.setAttribute('width', String(A4_LANDSCAPE_W_PT))
   clone.setAttribute('height', String(A4_LANDSCAPE_H_PT))
+  clone.querySelectorAll('image').forEach(img => {
+    const href = img.getAttribute('href') || img.getAttributeNS('http://www.w3.org/1999/xlink', 'href')
+    if (href) {
+      img.setAttribute('href', href)
+      img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', href)
+    }
+  })
 
   const svgMarkup = new XMLSerializer().serializeToString(clone)
   const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' })
@@ -95,6 +102,9 @@ export async function downloadChallanPdf(svgElement: SVGSVGElement, title: strin
       img.onerror = () => reject(new Error('Failed to render challan image.'))
       img.src = svgUrl
     })
+    if (typeof image.decode === 'function') {
+      await image.decode().catch(() => {})
+    }
 
     const scale = 2.5
     const widthPx = Math.round(A4_LANDSCAPE_W_PT * scale)
