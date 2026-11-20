@@ -7,9 +7,8 @@ import { syncInquiryToSheet } from '../lib/sheets'
 
 function WhatsAppIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
-      <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12.031 2c-5.516 0-9.992 4.476-9.992 9.992 0 1.763.461 3.484 1.336 5.002L2 22l5.137-1.348a9.956 9.956 0 0 0 4.894 1.281h.004c5.515 0 9.992-4.477 9.992-9.992A9.992 9.992 0 0 0 12.031 2zm0 18.234h-.003a8.294 8.294 0 0 1-4.229-1.158l-.303-.18-3.048.8.814-2.972-.198-.314a8.268 8.268 0 0 1-1.269-4.418c0-4.573 3.72-8.293 8.297-8.293 2.216 0 4.299.864 5.865 2.431a8.241 8.241 0 0 1 2.429 5.865c-.002 4.573-3.723 8.239-8.355 8.239zm4.549-6.212c-.25-.125-1.476-.729-1.705-.812-.229-.083-.395-.125-.562.125-.166.25-.645.812-.791.979-.146.166-.291.187-.541.062-.25-.125-1.055-.389-2.01-1.24-.743-.662-1.245-1.481-1.391-1.731-.146-.25-.016-.385.11-.51.112-.112.25-.291.375-.437.125-.146.166-.25.25-.416.083-.166.042-.312-.021-.437-.062-.125-.562-1.354-.77-1.854-.203-.487-.41-.421-.562-.429l-.479-.008c-.166 0-.437.062-.666.312-.229.25-.874.854-.874 2.083s.895 2.416 1.02 2.583c.125.166 1.762 2.691 4.269 3.773.596.257 1.062.411 1.425.526.599.19 1.144.163 1.575.099.48-.072 1.476-.604 1.684-1.187.208-.583.208-1.083.146-1.187-.062-.104-.229-.166-.479-.291z" />
     </svg>
   )
 }
@@ -45,7 +44,7 @@ function PaymentNotice() {
       <div className="micro-label">REGISTRATION FEES &amp; PAYMENT</div>
       <h3 id="payment-notice-title">Notice</h3>
       <dl className="fee-list">
-        <div><dt>For Students of Public Universities &amp; Colleges:</dt><dd>Rs. 4,310/-</dd></div>
+        <div><dt>For Students of Government Universities &amp; Colleges:</dt><dd>Rs. 4,310/-</dd></div>
         <div><dt>For Students of Private Universities &amp; Colleges:</dt><dd>Rs. 4,870/-</dd></div>
       </dl>
       <p>Payment will be confirmed by the company within <strong>48 working hours</strong>, followed by a confirmation email.</p>
@@ -85,8 +84,15 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
   function update<K extends keyof FormValues>(field: K, value: FormValues[K]) {
     let nextSemester = values.semester
     if (field === 'degree') {
+      const prevLevel = academicLevelOptions(values.degree)
       const nextLevel = academicLevelOptions(String(value))
-      if (!nextLevel.options.includes(values.semester)) nextSemester = ''
+      if (nextLevel.kind === 'none') {
+        nextSemester = ''
+      } else if (nextLevel.kind === 'custom') {
+        if (prevLevel.kind !== 'custom') nextSemester = ''
+      } else if (!nextLevel.options.includes(values.semester)) {
+        nextSemester = ''
+      }
     }
     const next = {
       ...values,
@@ -275,7 +281,16 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
               </div>
               <FieldError name="degree" errors={errors} />
             </div>
-            {level.kind !== 'none' && (
+            {level.kind === 'custom' && (
+              <div className="form-field">
+                <FieldLabel name="semester">Semester / year</FieldLabel>
+                <div className={`input-wrap ${errors.semester ? 'has-error' : ''}`}>
+                  <input {...fieldProps('semester')} type="text" maxLength={60} placeholder="e.g., Semester 2, Year 1, Diploma" onChange={event => update('semester', event.target.value)} />
+                </div>
+                <FieldError name="semester" errors={errors} />
+              </div>
+            )}
+            {(level.kind === 'semester' || level.kind === 'year') && (
               <div className="form-field">
                 <FieldLabel name="semester">{level.kind === 'year' ? 'Current year' : 'Current semester'}</FieldLabel>
                 <div className={`input-wrap ${errors.semester ? 'has-error' : ''}`}>

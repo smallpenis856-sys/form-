@@ -35,7 +35,7 @@ export function buildSheetPayload(inquiry: Inquiry, status: SheetSyncStatus): Sh
     address: inquiry.address,
     university: inquiry.university,
     institutionCategory: hasCategory
-      ? (inquiry.institutionCategory === 'private' ? 'Private University / College' : 'Public University / College')
+      ? (inquiry.institutionCategory === 'private' ? 'Private University / College' : 'Government University / College')
       : '',
     fee: challan ? challan.amount : '',
     degree: inquiry.degree,

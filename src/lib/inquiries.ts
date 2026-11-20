@@ -1,19 +1,20 @@
 export const STORAGE_KEY = 'first-noble-step.registrations.v1'
 export const FILE_ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf'
-export const degreePrograms = ['Intermediate', 'Graduation', 'Masters', 'Medical / Medicine', 'Computer Science (CS)', 'Other']
+export const degreePrograms = ['Intermediate', 'Graduation', 'Masters', 'Medical / Medicine', 'Computer Science (CS)', 'Fresh Graduate', 'Other']
 export const semesterOptions = ['1', '2', '3', '4', '5', '6', '7', '8']
 export const mastersSemesterOptions = ['1', '2', '3', '4']
 export const medicalYearOptions = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5']
 export type InstitutionCategory = 'public' | 'private'
 
-export function academicLevelOptions(degree: string): { kind: 'none' | 'semester' | 'year'; options: string[] } {
-  if (degree === 'Intermediate') return { kind: 'none', options: [] }
+export function academicLevelOptions(degree: string): { kind: 'none' | 'semester' | 'year' | 'custom'; options: string[] } {
+  if (degree === 'Intermediate' || degree === 'Fresh Graduate') return { kind: 'none', options: [] }
   if (degree === 'Medical / Medicine') return { kind: 'year', options: medicalYearOptions }
   if (degree === 'Masters') return { kind: 'semester', options: mastersSemesterOptions }
+  if (degree === 'Other') return { kind: 'custom', options: [] }
   return { kind: 'semester', options: semesterOptions }
 }
 export const institutionCategories: { value: InstitutionCategory; label: string; fee: number }[] = [
-  { value: 'public', label: 'Public University / College — Rs. 4,310/-', fee: 4310 },
+  { value: 'public', label: 'Government University / College — Rs. 4,310/-', fee: 4310 },
   { value: 'private', label: 'Private University / College — Rs. 4,870/-', fee: 4870 },
 ]
 
@@ -120,6 +121,8 @@ export function validate(values: FormValues, { requireCategory = true }: { requi
     errors.semester = 'Please select your current year (1 to 5).'
   } else if (level.kind === 'semester' && !level.options.includes(values.semester)) {
     errors.semester = `Please select a semester from 1 to ${level.options.length}.`
+  } else if (level.kind === 'custom' && !values.semester.trim()) {
+    errors.semester = 'Please enter your current semester, year, or level.'
   }
   const file = values.universityCard
   if (!file) {
@@ -178,7 +181,7 @@ export async function saveInquiry(
     address: values.address.trim(), university: values.university.trim(),
     ...(hasCategory ? { institutionCategory: values.institutionCategory as InstitutionCategory } : {}),
     degree: values.degree.trim(),
-    semester: values.degree === 'Intermediate' ? '' : values.semester.trim(),
+    semester: academicLevelOptions(values.degree).kind === 'none' ? '' : values.semester.trim(),
     universityCard: values.universityCard,
     id,
     reference: existing?.reference || `FNS-${id.slice(0, 6).toUpperCase()}`,
@@ -215,7 +218,7 @@ export function registrationDetails(inquiry: Inquiry) {
     ['Correspondence address', inquiry.address], ['University / college', inquiry.university],
     ...(categoryLabel ? [['Student category', categoryLabel] as [string, string]] : []),
     ['Degree program', inquiry.degree],
-    ...(inquiry.semester ? [[inquiry.degree === 'Medical / Medicine' ? 'Current year' : 'Current semester', inquiry.semester] as [string, string]] : []),
+    ...(inquiry.semester ? [[inquiry.degree === 'Medical / Medicine' ? 'Current year' : inquiry.degree === 'Other' ? 'Semester / year' : 'Current semester', inquiry.semester] as [string, string]] : []),
   ]
 }
 
