@@ -14,7 +14,7 @@ export type SheetPayload = {
   address: string
   university: string
   institutionCategory: string
-  fee: number
+  fee: number | ''
   degree: string
   semester: string
   universityCardFile: string
@@ -23,7 +23,8 @@ export type SheetPayload = {
 }
 
 export function buildSheetPayload(inquiry: Inquiry, status: SheetSyncStatus): SheetPayload {
-  const challan = buildChallan(inquiry)
+  const hasCategory = inquiry.institutionCategory === 'public' || inquiry.institutionCategory === 'private'
+  const challan = hasCategory ? buildChallan(inquiry) : null
   return {
     reference: inquiry.reference,
     submittedAt: inquiry.createdAt,
@@ -33,13 +34,15 @@ export function buildSheetPayload(inquiry: Inquiry, status: SheetSyncStatus): Sh
     phone: fullPhone(inquiry),
     address: inquiry.address,
     university: inquiry.university,
-    institutionCategory: inquiry.institutionCategory === 'private' ? 'Private University / College' : 'Public University / College',
-    fee: challan.amount,
+    institutionCategory: hasCategory
+      ? (inquiry.institutionCategory === 'private' ? 'Private University / College' : 'Public University / College')
+      : '',
+    fee: challan ? challan.amount : '',
     degree: inquiry.degree,
     semester: inquiry.semester,
     universityCardFile: inquiry.universityCard.name,
-    issueDate: challan.issue,
-    validTill: challan.valid,
+    issueDate: challan ? challan.issue : '',
+    validTill: challan ? challan.valid : '',
   }
 }
 

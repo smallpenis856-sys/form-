@@ -61,6 +61,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
   const [saving, setSaving] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const noticeHeadingRef = useRef<HTMLHeadingElement>(null)
+  const categorySelectRef = useRef<HTMLSelectElement>(null)
   const busy = useRef(false)
 
   useEffect(() => {
@@ -73,11 +74,13 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
   function update<K extends keyof FormValues>(field: K, value: FormValues[K]) {
     const next = { ...values, [field]: value }
     setValues(next)
-    if (errors[field] || field === 'universityCard') setErrors(previous => ({ ...previous, [field]: validate(next)[field] }))
+    if (errors[field] || field === 'universityCard') {
+      setErrors(previous => ({ ...previous, [field]: validate(next, { requireCategory: step === 'notice' })[field] }))
+    }
     if (storageError) setStorageError('')
   }
   function onBlur(field: TextField) {
-    if (values[field].trim()) setErrors(previous => ({ ...previous, [field]: validate(values)[field] }))
+    if (values[field].trim()) setErrors(previous => ({ ...previous, [field]: validate(values, { requireCategory: step === 'notice' })[field] }))
   }
   function fieldProps(name: TextField) {
     return {
@@ -90,7 +93,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
   async function handleContinue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (busy.current) return
-    const nextErrors = validate(values)
+    const nextErrors = validate(values, { requireCategory: false })
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length) {
       const first = Object.keys(nextErrors)[0]
@@ -113,8 +116,15 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
       setSaving(false)
     }
   }
-  async function handleConfirm() {
+  async function handleConfirm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     if (busy.current) return
+    const categoryError = validate(values, { requireCategory: true }).institutionCategory
+    if (categoryError) {
+      setErrors(previous => ({ ...previous, institutionCategory: categoryError }))
+      categorySelectRef.current?.focus()
+      return
+    }
     try {
       busy.current = true
       setSaving(true)
@@ -125,8 +135,9 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
       onGenerated(confirmed)
     } catch {
       if (savedInquiry) {
-        void syncInquiryToSheet(savedInquiry, 'Challan Generated')
-        onGenerated(savedInquiry)
+        const fallback = { ...savedInquiry, institutionCategory: values.institutionCategory as InstitutionCategory, status: 'confirmed' as const }
+        void syncInquiryToSheet(fallback, 'Challan Generated')
+        onGenerated(fallback)
       } else {
         setStorageError('Could not confirm your registration. Please try again.')
       }
@@ -137,7 +148,6 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
   }
 
   if (step === 'notice') {
-    const selectedCategory = institutionCategories.find(c => c.value === values.institutionCategory)
     return (
       <section className="form-card" id="inquiry-form" aria-labelledby="notice-step-heading" tabIndex={-1}>
         <div className="form-heading">
@@ -145,14 +155,31 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
             <h2 id="notice-step-heading" ref={noticeHeadingRef} tabIndex={-1}>Fee &amp; payment notice</h2>
             <span className="form-number"><span className="tiny-cross">+</span> STEP 02</span>
           </div>
-          <p>{selectedCategory ? `Selected: ${selectedCategory.label}. Confirm below to generate your challan.` : 'Review the registration fee and payment notice below to confirm.'}</p>
+          <p>Review the fee notice, select your university or college category, and confirm to generate your challan.</p>
         </div>
         <PaymentNotice />
-        {storageError && <div className="storage-error" role="alert">{storageError}</div>}
-        <button className="primary-button submit-button" type="button" disabled={saving} onClick={handleConfirm}>
-          <span><Check size={16} strokeWidth={1.8} />{saving ? 'Generating challan…' : 'Confirm & Generate Challan'}</span>
-          <ArrowRight size={19} strokeWidth={1.7} />
-        </button>
+        <form noValidate onSubmit={handleConfirm}>
+          <div className="form-field step-category-field">
+            <FieldLabel name="institutionCategory">University / college category</FieldLabel>
+            <div className={`input-wrap ${errors.institutionCategory ? 'has-error' : ''}`}>
+              <select
+                ref={categorySelectRef}
+                {...fieldProps('institutionCategory')}
+                disabled={saving}
+                onChange={event => update('institutionCategory', event.target.value as '' | InstitutionCategory)}
+              >
+                <option value="" disabled>Select university / college category</option>
+                {institutionCategories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}
+              </select>
+            </div>
+            <FieldError name="institutionCategory" errors={errors} />
+          </div>
+          {storageError && <div className="storage-error" role="alert">{storageError}</div>}
+          <button className="primary-button submit-button" type="submit" disabled={saving}>
+            <span><Check size={16} strokeWidth={1.8} />{saving ? 'Generating challan…' : 'Confirm & Generate Challan'}</span>
+            <ArrowRight size={19} strokeWidth={1.7} />
+          </button>
+        </form>
         <button className="new-inquiry-button" type="button" disabled={saving} onClick={() => setStep('form')}>
           <ArrowLeft size={15} />Back to edit details
         </button>
@@ -209,16 +236,6 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
             </div>
             <FieldError name="university" errors={errors} />
           </div>
-          <div className="form-field">
-            <FieldLabel name="institutionCategory">Student category</FieldLabel>
-            <div className={`input-wrap ${errors.institutionCategory ? 'has-error' : ''}`}>
-              <select {...fieldProps('institutionCategory')} onChange={event => update('institutionCategory', event.target.value as '' | InstitutionCategory)}>
-                <option value="" disabled>Select university / college category</option>
-                {institutionCategories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}
-              </select>
-            </div>
-            <FieldError name="institutionCategory" errors={errors} />
-          </div>
           <div className="academic-row">
             <div className="form-field">
               <FieldLabel name="degree">Degree program</FieldLabel>
@@ -242,9 +259,9 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
           <DocumentField name="universityCard" label="Upload university card" file={values.universityCard} errors={errors} onChange={file => update('universityCard', file)} />
         </fieldset>
         {storageError && <div className="storage-error" role="alert">{storageError}</div>}
-        <button className="primary-button submit-button" type="submit" disabled={saving}><span><Send size={16} strokeWidth={1.65} />{saving ? 'Saving…' : 'Generate Challan'}</span><ArrowRight size={19} strokeWidth={1.7} /></button>
+        <button className="primary-button submit-button" type="submit" disabled={saving}><span><Send size={16} strokeWidth={1.65} />{saving ? 'Saving…' : 'Continue to Fee Notice'}</span><ArrowRight size={19} strokeWidth={1.7} /></button>
       </form>
-      <span className="sr-only" id="required-note">All fields are required. Attach your university card and select your student category to continue to the fee notice.</span>
+      <span className="sr-only" id="required-note">All fields are required. Attach your university card to continue to the fee notice and category selection.</span>
     </section>
   )
 }

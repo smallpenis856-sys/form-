@@ -92,7 +92,7 @@ export type Inquiry = Omit<FormValues, 'institutionCategory'> & Record<FileField
 
 export const emptyForm: FormValues = { name: '', email: '', phone: '', address: '', university: '', institutionCategory: '', degree: '', semester: '', universityCard: null }
 
-export function validate(values: FormValues): FieldErrors {
+export function validate(values: FormValues, { requireCategory = true }: { requireCategory?: boolean } = {}): FieldErrors {
   const errors: FieldErrors = {}
   if (!values.name.trim()) errors.name = 'Please enter your name.'
   if (!values.email.trim()) errors.email = 'Please enter your email address.'
@@ -103,7 +103,7 @@ export function validate(values: FormValues): FieldErrors {
   else if (!/^\+?[\d\s().-]+$/.test(phone) || digits.length < 7 || digits.length > 15) errors.phone = 'Enter a valid WhatsApp number with 7–15 digits.'
   if (!values.address.trim()) errors.address = 'Enter the address for your certificate and experience letter.'
   if (!values.university.trim()) errors.university = 'Please enter your university or college name.'
-  if (values.institutionCategory !== 'public' && values.institutionCategory !== 'private') errors.institutionCategory = 'Please select your university or college category.'
+  if (requireCategory && values.institutionCategory !== 'public' && values.institutionCategory !== 'private') errors.institutionCategory = 'Please select your university or college category.'
   if (!values.degree.trim()) errors.degree = 'Please enter your degree program.'
   if (!semesterOptions.includes(values.semester)) errors.semester = 'Please select a semester from 1 to 8.'
   const file = values.universityCard
@@ -151,12 +151,13 @@ export async function saveInquiry(
   status: 'submitted' | 'confirmed' = 'submitted',
 ): Promise<Inquiry> {
   if (!values.universityCard) throw new Error('University card is required.')
-  if (values.institutionCategory !== 'public' && values.institutionCategory !== 'private') throw new Error('Student category is required.')
+  const hasCategory = values.institutionCategory === 'public' || values.institutionCategory === 'private'
+  if (status === 'confirmed' && !hasCategory) throw new Error('University / college category is required.')
   const id = existing?.id || crypto.randomUUID()
   const inquiry: Inquiry = {
     name: values.name.trim(), email: values.email.trim(), phone: values.phone.trim(),
     address: values.address.trim(), university: values.university.trim(),
-    institutionCategory: values.institutionCategory,
+    ...(hasCategory ? { institutionCategory: values.institutionCategory as InstitutionCategory } : {}),
     degree: values.degree.trim(), semester: values.semester.trim(),
     universityCard: values.universityCard,
     id,
