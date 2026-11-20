@@ -240,8 +240,10 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
             <div className="form-field">
               <FieldLabel name="degree">Degree program</FieldLabel>
               <div className={`input-wrap ${errors.degree ? 'has-error' : ''}`}>
-                <input {...fieldProps('degree')} list="degree-programs" maxLength={120} placeholder="e.g. Intermediate, ADP, BS" onChange={event => update('degree', event.target.value)} />
-                <datalist id="degree-programs">{degreePrograms.map(program => <option key={program} value={program} />)}</datalist>
+                <select {...fieldProps('degree')} onChange={event => update('degree', event.target.value)}>
+                  <option value="" disabled>Select degree program</option>
+                  {degreePrograms.map(program => <option key={program} value={program}>{program}</option>)}
+                </select>
               </div>
               <FieldError name="degree" errors={errors} />
             </div>

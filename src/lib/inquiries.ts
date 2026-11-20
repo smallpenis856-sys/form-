@@ -104,7 +104,7 @@ export function validate(values: FormValues, { requireCategory = true }: { requi
   if (!values.address.trim()) errors.address = 'Enter the address for your certificate and experience letter.'
   if (!values.university.trim()) errors.university = 'Please enter your university or college name.'
   if (requireCategory && values.institutionCategory !== 'public' && values.institutionCategory !== 'private') errors.institutionCategory = 'Please select your university or college category.'
-  if (!values.degree.trim()) errors.degree = 'Please enter your degree program.'
+  if (!degreePrograms.includes(values.degree)) errors.degree = 'Please select your degree program.'
   if (!semesterOptions.includes(values.semester)) errors.semester = 'Please select a semester from 1 to 8.'
   const file = values.universityCard
   if (!file) errors.universityCard = 'Please attach your university card.'
