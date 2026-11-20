@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ArrowLeft, ArrowRight, Check, GraduationCap, Landmark, Mail, Phone, Send, Upload, UserRound } from 'lucide-react'
-import { degreePrograms, emptyForm, FILE_ACCEPT, institutionCategories, saveInquiry, semesterOptions, validate } from '../lib/inquiries'
+import { ArrowLeft, ArrowRight, Check, GraduationCap, Landmark, Mail, Send, Upload, UserRound } from 'lucide-react'
+import { academicLevelOptions, degreePrograms, emptyForm, FILE_ACCEPT, institutionCategories, saveInquiry, validate } from '../lib/inquiries'
 import type { FieldErrors, FieldName, FileField, FormValues, Inquiry, InstitutionCategory, TextField } from '../lib/inquiries'
 import { syncInquiryToSheet } from '../lib/sheets'
+
+function WhatsAppIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+      <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
+    </svg>
+  )
+}
 
 function FieldLabel({ name, children }: { name: FieldName; children: string }) {
   return <label htmlFor={name}>{children} <span className="required-star" aria-hidden="true">*</span></label>
@@ -14,15 +23,16 @@ function FieldError({ name, errors }: { name: FieldName; errors: FieldErrors }) 
 }
 
 function DocumentField({ name, label, help, file, errors, onChange }: { name: FileField; label: string; help?: string; file: File | null; errors: FieldErrors; onChange: (file: File | null) => void }) {
+  const describedBy = [help ? `${name}-help` : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined
   return (
     <div className="form-field">
       <FieldLabel name={name}>{label}</FieldLabel>
       {help && <p className="field-help" id={`${name}-help`}>{help}</p>}
       <div className={`document-input ${errors[name] ? 'has-error' : ''}`}>
         <Upload size={18} strokeWidth={1.5} aria-hidden="true" />
-        <span className="document-caption"><strong>{file?.name || 'Choose a file'}</strong><small id={`${name}-hint`}>JPG, PNG, WebP or PDF · Up to 5 MB</small></span>
+        <span className="document-caption"><strong>{file?.name || 'Choose a file'}</strong></span>
         <span className="document-browse">{file ? 'Replace' : 'Browse'}</span>
-        <input type="file" id={name} name={name} required accept={FILE_ACCEPT} aria-invalid={Boolean(errors[name])} aria-describedby={`${help ? `${name}-help ` : ''}${name}-hint${errors[name] ? ` ${name}-error` : ''}`} onChange={event => onChange(event.target.files?.[0] || null)} />
+        <input type="file" id={name} name={name} required accept={FILE_ACCEPT} aria-invalid={Boolean(errors[name])} aria-describedby={describedBy} onChange={event => onChange(event.target.files?.[0] || null)} />
       </div>
       <FieldError name={name} errors={errors} />
     </div>
@@ -73,10 +83,15 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
   }, [step])
 
   function update<K extends keyof FormValues>(field: K, value: FormValues[K]) {
+    let nextSemester = values.semester
+    if (field === 'degree') {
+      const nextLevel = academicLevelOptions(String(value))
+      if (!nextLevel.options.includes(values.semester)) nextSemester = ''
+    }
     const next = {
       ...values,
       [field]: value,
-      ...(field === 'degree' && value === 'Intermediate' ? { semester: '' } : {}),
+      ...(field === 'degree' ? { semester: nextSemester } : {}),
     }
     setValues(next)
     if (errors[field] || field === 'universityCard' || (field === 'degree' && (errors.semester || errors.universityCard))) {
@@ -84,7 +99,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
       setErrors(previous => ({
         ...previous,
         [field]: checked[field],
-        ...(field === 'degree' ? { semester: checked.semester, universityCard: errors.universityCard ? checked.universityCard : previous.universityCard } : {}),
+        ...(field === 'degree' ? { semester: nextSemester ? checked.semester : undefined, universityCard: errors.universityCard ? checked.universityCard : previous.universityCard } : {}),
       }))
     }
     if (storageError) setStorageError('')
@@ -198,6 +213,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
   }
 
   const isIntermediate = values.degree === 'Intermediate'
+  const level = academicLevelOptions(values.degree)
 
   return (
     <section className="form-card" id="inquiry-form" aria-labelledby="form-heading" tabIndex={-1}>
@@ -227,7 +243,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
           <div className="form-field">
             <FieldLabel name="phone">WhatsApp number</FieldLabel>
             <div className={`input-wrap ${errors.phone ? 'has-error' : ''}`}>
-              <Phone size={18} strokeWidth={1.55} />
+              <WhatsAppIcon />
               <input {...fieldProps('phone')} type="tel" autoComplete="tel" inputMode="tel" maxLength={30} placeholder="Enter WhatsApp number" onChange={event => update('phone', event.target.value)} />
             </div>
             <FieldError name="phone" errors={errors} />
@@ -248,7 +264,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
             </div>
             <FieldError name="university" errors={errors} />
           </div>
-          <div className={isIntermediate ? 'academic-row academic-row-single' : 'academic-row'}>
+          <div className={level.kind === 'none' ? 'academic-row academic-row-single' : 'academic-row'}>
             <div className="form-field">
               <FieldLabel name="degree">Degree program</FieldLabel>
               <div className={`input-wrap ${errors.degree ? 'has-error' : ''}`}>
@@ -259,13 +275,17 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
               </div>
               <FieldError name="degree" errors={errors} />
             </div>
-            {!isIntermediate && (
+            {level.kind !== 'none' && (
               <div className="form-field">
-                <FieldLabel name="semester">Current semester</FieldLabel>
+                <FieldLabel name="semester">{level.kind === 'year' ? 'Current year' : 'Current semester'}</FieldLabel>
                 <div className={`input-wrap ${errors.semester ? 'has-error' : ''}`}>
                   <select {...fieldProps('semester')} onChange={event => update('semester', event.target.value)}>
-                    <option value="" disabled>Select semester</option>
-                    {semesterOptions.map(semester => <option key={semester} value={semester}>Semester {semester}</option>)}
+                    <option value="" disabled>{level.kind === 'year' ? 'Select year' : 'Select semester'}</option>
+                    {level.options.map(option => (
+                      <option key={option} value={option}>
+                        {level.kind === 'year' ? option : `Semester ${option}`}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <FieldError name="semester" errors={errors} />
