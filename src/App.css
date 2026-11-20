@@ -70,6 +70,7 @@
 .saved-documents { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 16px; }
 .form-field label { display: block; width: fit-content; margin-bottom: 7px; color: #334333; font-size: 13px; line-height: 19px; font-weight: 600; letter-spacing: -.05px; }
 .required-star { margin-left: 2px; color: #65805b; font-size: 12px; }
+.field-optional { margin-left: 4px; color: #7a8675; font-size: 11.5px; font-weight: 450; }
 .input-wrap, .textarea-wrap { border: 1px solid #d9ded3; background: #fafbf8; border-radius: 6px; transition: background .18s, border-color .18s, box-shadow .18s; }
 .input-wrap { display: flex; align-items: center; gap: 11px; min-height: 44px; padding: 0 13px; }
 .input-wrap > svg { flex-shrink: 0; color: #8b9685; }

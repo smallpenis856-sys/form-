@@ -40,7 +40,7 @@ export function buildSheetPayload(inquiry: Inquiry, status: SheetSyncStatus): Sh
     fee: challan ? challan.amount : '',
     degree: inquiry.degree,
     semester: inquiry.semester,
-    universityCardFile: inquiry.universityCard.name,
+    universityCardFile: inquiry.universityCard?.name || '',
     issueDate: challan ? challan.issue : '',
     validTill: challan ? challan.valid : '',
   }

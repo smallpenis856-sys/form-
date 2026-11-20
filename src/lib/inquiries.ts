@@ -90,13 +90,14 @@ export type FileField = 'universityCard'
 export type FieldName = keyof FormValues
 export type TextField = Exclude<FieldName, FileField>
 export type FieldErrors = Partial<Record<FieldName, string>>
-export type Inquiry = Omit<FormValues, 'institutionCategory'> & Record<FileField, File> & {
+export type Inquiry = Omit<FormValues, 'institutionCategory' | 'universityCard'> & {
   id: string
   reference: string
   createdAt: string
   country?: string
   institutionCategory?: InstitutionCategory
   status?: 'submitted' | 'confirmed'
+  universityCard?: File
   paymentProof?: File
 }
 
@@ -104,7 +105,6 @@ export const emptyForm: FormValues = { name: '', email: '', phone: '', address: 
 
 export function validate(values: FormValues, { requireCategory = true }: { requireCategory?: boolean } = {}): FieldErrors {
   const errors: FieldErrors = {}
-  const isIntermediate = values.degree === 'Intermediate'
   const level = academicLevelOptions(values.degree)
   if (!values.name.trim()) errors.name = 'Please enter your name.'
   if (!values.email.trim()) errors.email = 'Please enter your email address.'
@@ -125,14 +125,11 @@ export function validate(values: FormValues, { requireCategory = true }: { requi
     errors.semester = 'Please enter your current semester, year, or level.'
   }
   const file = values.universityCard
-  if (!file) {
-    errors.universityCard = isIntermediate
-      ? 'Please attach your college / high school card, CNIC, or Intermediate certificate.'
-      : 'Please attach your university card, CNIC, or Intermediate certificate.'
+  if (file) {
+    if (!/\.(jpe?g|png|webp|pdf)$/i.test(file.name) || (file.type && !['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type))) errors.universityCard = 'Choose a JPG, PNG, WebP, or PDF file.'
+    else if (!file.size) errors.universityCard = 'This file is empty. Please choose another file.'
+    else if (file.size > 5 * 1024 * 1024) errors.universityCard = 'Choose a file no larger than 5 MB.'
   }
-  else if (!/\.(jpe?g|png|webp|pdf)$/i.test(file.name) || (file.type && !['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type))) errors.universityCard = 'Choose a JPG, PNG, WebP, or PDF file.'
-  else if (!file.size) errors.universityCard = 'This file is empty. Please choose another file.'
-  else if (file.size > 5 * 1024 * 1024) errors.universityCard = 'Choose a file no larger than 5 MB.'
   return errors
 }
 
@@ -172,7 +169,6 @@ export async function saveInquiry(
   existing?: Pick<Inquiry, 'id' | 'reference' | 'createdAt'>,
   status: 'submitted' | 'confirmed' = 'submitted',
 ): Promise<Inquiry> {
-  if (!values.universityCard) throw new Error('University card is required.')
   const hasCategory = values.institutionCategory === 'public' || values.institutionCategory === 'private'
   if (status === 'confirmed' && !hasCategory) throw new Error('University / college category is required.')
   const id = existing?.id || crypto.randomUUID()
@@ -182,7 +178,7 @@ export async function saveInquiry(
     ...(hasCategory ? { institutionCategory: values.institutionCategory as InstitutionCategory } : {}),
     degree: values.degree.trim(),
     semester: academicLevelOptions(values.degree).kind === 'none' ? '' : values.semester.trim(),
-    universityCard: values.universityCard,
+    ...(values.universityCard ? { universityCard: values.universityCard } : {}),
     id,
     reference: existing?.reference || `FNS-${id.slice(0, 6).toUpperCase()}`,
     createdAt: existing?.createdAt || new Date().toISOString(),
@@ -238,7 +234,7 @@ export function downloadInquiry(inquiry: Inquiry) {
     'FIRST NOBLE STEP — STUDENT REGISTRATION', `Reference: ${inquiry.reference}`,
     `Saved: ${new Date(inquiry.createdAt).toLocaleString()}`, '',
     ...registrationDetails(inquiry).map(([label, value]) => `${label}: ${value}`), '',
-    `${inquiry.degree === 'Intermediate' ? 'College / high school card' : 'University card'}: ${inquiry.universityCard.name}`, ...(inquiry.paymentProof ? [`Payment proof: ${inquiry.paymentProof.name}`] : []), '',
+    `${inquiry.degree === 'Intermediate' ? 'College / high school card' : 'University card'}: ${inquiry.universityCard?.name || 'Not uploaded'}`, ...(inquiry.paymentProof ? [`Payment proof: ${inquiry.paymentProof.name}`] : []), '',
     'Local registration record. This is not a payment confirmation.',
     'Access your documents under Privacy note → My registrations. This form has not sent them to the company.',
   ].join('\n')

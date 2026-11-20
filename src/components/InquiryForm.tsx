@@ -13,8 +13,15 @@ function WhatsAppIcon() {
   )
 }
 
-function FieldLabel({ name, children }: { name: FieldName; children: string }) {
-  return <label htmlFor={name}>{children} <span className="required-star" aria-hidden="true">*</span></label>
+function FieldLabel({ name, optional, children }: { name: FieldName; optional?: boolean; children: string }) {
+  return (
+    <label htmlFor={name}>
+      {children}{' '}
+      {optional
+        ? <span className="field-optional">(optional)</span>
+        : <span className="required-star" aria-hidden="true">*</span>}
+    </label>
+  )
 }
 
 function FieldError({ name, errors }: { name: FieldName; errors: FieldErrors }) {
@@ -25,13 +32,13 @@ function DocumentField({ name, label, help, file, errors, onChange }: { name: Fi
   const describedBy = [help ? `${name}-help` : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined
   return (
     <div className="form-field">
-      <FieldLabel name={name}>{label}</FieldLabel>
+      <FieldLabel name={name} optional>{label}</FieldLabel>
       {help && <p className="field-help" id={`${name}-help`}>{help}</p>}
       <div className={`document-input ${errors[name] ? 'has-error' : ''}`}>
         <Upload size={18} strokeWidth={1.5} aria-hidden="true" />
         <span className="document-caption"><strong>{file?.name || 'Choose a file'}</strong></span>
         <span className="document-browse">{file ? 'Replace' : 'Browse'}</span>
-        <input type="file" id={name} name={name} required accept={FILE_ACCEPT} aria-invalid={Boolean(errors[name])} aria-describedby={describedBy} onChange={event => onChange(event.target.files?.[0] || null)} />
+        <input type="file" id={name} name={name} accept={FILE_ACCEPT} aria-invalid={Boolean(errors[name])} aria-describedby={describedBy} onChange={event => onChange(event.target.files?.[0] || null)} />
       </div>
       <FieldError name={name} errors={errors} />
     </div>
@@ -318,7 +325,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
         {storageError && <div className="storage-error" role="alert">{storageError}</div>}
         <button className="primary-button submit-button" type="submit" disabled={saving}><span><Send size={16} strokeWidth={1.65} />{saving ? 'Saving…' : 'Continue'}</span><ArrowRight size={19} strokeWidth={1.7} /></button>
       </form>
-      <span className="sr-only" id="required-note">All fields are required. Attach your student card, CNIC, or Intermediate certificate to continue.</span>
+      <span className="sr-only" id="required-note">Fields marked with * are required. Uploading a student card is optional.</span>
     </section>
   )
 }
