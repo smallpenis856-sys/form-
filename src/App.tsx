@@ -44,7 +44,7 @@ function App() {
 
       <main className="page-width main-content">
         {activeChallan ? (
-          <ChallanView inquiry={activeChallan} onAnother={() => setActiveChallan(null)} />
+          <ChallanView inquiry={activeChallan} />
         ) : (
           <div className="contact-layout">
             <div className="form-banner">

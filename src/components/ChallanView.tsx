@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef } from 'react'
-import { Download, Printer, RotateCcw } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Download, Printer } from 'lucide-react'
 import { buildChallan, fitChallanText } from '../lib/challan'
-import { downloadInquiry } from '../lib/inquiries'
+import { downloadChallanPdf } from '../lib/challanPdf'
 import type { Inquiry } from '../lib/inquiries'
 
-export function ChallanView({ inquiry, onAnother }: { inquiry: Inquiry; onAnother: () => void }) {
+export function ChallanView({ inquiry }: { inquiry: Inquiry }) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const sheetRef = useRef<HTMLDivElement>(null)
+  const [savingPdf, setSavingPdf] = useState(false)
   const challan = useMemo(() => buildChallan(inquiry), [inquiry])
 
   useEffect(() => {
@@ -26,6 +27,19 @@ export function ChallanView({ inquiry, onAnother }: { inquiry: Inquiry; onAnothe
     window.print()
   }
 
+  async function handleSavePdf() {
+    const svg = sheetRef.current?.querySelector('svg')
+    if (!svg || savingPdf) return
+    try {
+      setSavingPdf(true)
+      await downloadChallanPdf(svg, challan.title)
+    } catch {
+      handlePrint()
+    } finally {
+      setSavingPdf(false)
+    }
+  }
+
   return (
     <section className="challan-view" id="challan-view" aria-labelledby="challan-title">
       <div className="challan-bar no-print">
@@ -43,16 +57,17 @@ export function ChallanView({ inquiry, onAnother }: { inquiry: Inquiry; onAnothe
           </p>
         </div>
         <div className="challan-actions">
-          <button type="button" className="primary-button" onClick={handlePrint}><Printer size={16} />Print / Save as PDF</button>
-          <button type="button" className="archive-button" onClick={() => downloadInquiry(inquiry)}><Download size={15} />Download copy</button>
-          <button type="button" className="archive-button" onClick={onAnother}><RotateCcw size={15} />New registration</button>
+          <button type="button" className="primary-button" onClick={handlePrint}><Printer size={16} />Print</button>
+          <button type="button" className="archive-button" disabled={savingPdf} onClick={handleSavePdf}>
+            <Download size={15} />{savingPdf ? 'Saving PDF…' : 'Save as PDF'}
+          </button>
         </div>
       </div>
 
       <div ref={sheetRef} className="challan-sheet" dangerouslySetInnerHTML={{ __html: challan.svg }} />
 
       <p className="challan-tip no-print">
-        Three copies on one A4 landscape page (Bank, Student, and Company). In the print dialog, choose “Save as PDF”, paper A4, landscape, margins “None”, and keep “Background graphics” on.
+        Three copies on one A4 landscape page (Bank, Student, and Company). Click “Save as PDF” to download directly, or “Print” to print on A4 landscape.
       </p>
     </section>
   )
