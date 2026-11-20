@@ -1,6 +1,6 @@
 export const STORAGE_KEY = 'first-noble-step.registrations.v1'
 export const FILE_ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf'
-export const degreePrograms = ['Intermediate', 'Graduation', 'Masters', 'Medical / Medicine', 'Computer Science (CS)', 'Fresh Graduate', 'Other']
+export const degreePrograms = ['Intermediate', 'Graduation', 'Fresh Graduate', 'Masters', 'Medical / Medicine', 'Computer Science (CS)', 'Other']
 export const semesterOptions = ['1', '2', '3', '4', '5', '6', '7', '8']
 export const mastersSemesterOptions = ['1', '2', '3', '4']
 export const medicalYearOptions = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5']
