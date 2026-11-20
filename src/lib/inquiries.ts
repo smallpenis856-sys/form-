@@ -1,6 +1,6 @@
 export const STORAGE_KEY = 'first-noble-step.registrations.v1'
 export const FILE_ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf'
-export const degreePrograms = ['Intermediate', 'ADP', 'BS', 'BBA', 'BA', 'BCom', 'BE', 'MBBS', 'MA', 'MS', 'MBA', 'MPhil', 'PhD']
+export const degreePrograms = ['Intermediate', 'Graduation', 'Masters', 'Medical / Medicine', 'Computer Science (CS)', 'Other']
 export const semesterOptions = ['1', '2', '3', '4', '5', '6', '7', '8']
 export type InstitutionCategory = 'public' | 'private'
 export const institutionCategories: { value: InstitutionCategory; label: string; fee: number }[] = [
