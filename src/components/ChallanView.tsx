@@ -44,17 +44,7 @@ export function ChallanView({ inquiry }: { inquiry: Inquiry }) {
     <section className="challan-view" id="challan-view" aria-labelledby="challan-title">
       <div className="challan-bar no-print">
         <div>
-          <div className="micro-label">FIRST NOBLE STEP / FEE CHALLAN</div>
           <h2 id="challan-title" ref={headingRef} tabIndex={-1}>Your fee challan, {inquiry.name.split(/\s+/)[0]}.</h2>
-          <p className="challan-meta">
-            <span>{inquiry.reference}</span>
-            <i>·</i>
-            <span>Rs. {challan.fee}</span>
-            <i>·</i>
-            <span>Issued {challan.issue}</span>
-            <i>·</i>
-            <span>Valid till {challan.valid}</span>
-          </p>
         </div>
         <div className="challan-actions">
           <button type="button" className="primary-button" onClick={handlePrint}><Printer size={16} />Print</button>
@@ -65,10 +55,6 @@ export function ChallanView({ inquiry }: { inquiry: Inquiry }) {
       </div>
 
       <div ref={sheetRef} className="challan-sheet" dangerouslySetInnerHTML={{ __html: challan.svg }} />
-
-      <p className="challan-tip no-print">
-        Three copies on one A4 landscape page (Bank, Student, and Company). Click “Save as PDF” to download directly, or “Print” to print on A4 landscape.
-      </p>
     </section>
   )
 }

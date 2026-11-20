@@ -94,6 +94,7 @@ export const emptyForm: FormValues = { name: '', email: '', phone: '', address: 
 
 export function validate(values: FormValues, { requireCategory = true }: { requireCategory?: boolean } = {}): FieldErrors {
   const errors: FieldErrors = {}
+  const isIntermediate = values.degree === 'Intermediate'
   if (!values.name.trim()) errors.name = 'Please enter your name.'
   if (!values.email.trim()) errors.email = 'Please enter your email address.'
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) errors.email = 'Enter a valid email address, like name@example.com.'
@@ -105,9 +106,13 @@ export function validate(values: FormValues, { requireCategory = true }: { requi
   if (!values.university.trim()) errors.university = 'Please enter your university or college name.'
   if (requireCategory && values.institutionCategory !== 'public' && values.institutionCategory !== 'private') errors.institutionCategory = 'Please select your university or college category.'
   if (!degreePrograms.includes(values.degree)) errors.degree = 'Please select your degree program.'
-  if (!semesterOptions.includes(values.semester)) errors.semester = 'Please select a semester from 1 to 8.'
+  if (!isIntermediate && !semesterOptions.includes(values.semester)) errors.semester = 'Please select a semester from 1 to 8.'
   const file = values.universityCard
-  if (!file) errors.universityCard = 'Please attach your university card.'
+  if (!file) {
+    errors.universityCard = isIntermediate
+      ? 'Please attach your college / high school card, CNIC, or Intermediate certificate.'
+      : 'Please attach your university card, CNIC, or Intermediate certificate.'
+  }
   else if (!/\.(jpe?g|png|webp|pdf)$/i.test(file.name) || (file.type && !['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type))) errors.universityCard = 'Choose a JPG, PNG, WebP, or PDF file.'
   else if (!file.size) errors.universityCard = 'This file is empty. Please choose another file.'
   else if (file.size > 5 * 1024 * 1024) errors.universityCard = 'Choose a file no larger than 5 MB.'
@@ -158,7 +163,8 @@ export async function saveInquiry(
     name: values.name.trim(), email: values.email.trim(), phone: values.phone.trim(),
     address: values.address.trim(), university: values.university.trim(),
     ...(hasCategory ? { institutionCategory: values.institutionCategory as InstitutionCategory } : {}),
-    degree: values.degree.trim(), semester: values.semester.trim(),
+    degree: values.degree.trim(),
+    semester: values.degree === 'Intermediate' ? '' : values.semester.trim(),
     universityCard: values.universityCard,
     id,
     reference: existing?.reference || `FNS-${id.slice(0, 6).toUpperCase()}`,
@@ -194,7 +200,8 @@ export function registrationDetails(inquiry: Inquiry) {
     ['Full name', inquiry.name], ['Email address', inquiry.email], ['WhatsApp number', fullPhone(inquiry)],
     ['Correspondence address', inquiry.address], ['University / college', inquiry.university],
     ...(categoryLabel ? [['Student category', categoryLabel] as [string, string]] : []),
-    ['Degree program', inquiry.degree], ['Current semester', inquiry.semester],
+    ['Degree program', inquiry.degree],
+    ...(inquiry.semester ? [['Current semester', inquiry.semester] as [string, string]] : []),
   ]
 }
 
@@ -214,7 +221,7 @@ export function downloadInquiry(inquiry: Inquiry) {
     'FIRST NOBLE STEP — STUDENT REGISTRATION', `Reference: ${inquiry.reference}`,
     `Saved: ${new Date(inquiry.createdAt).toLocaleString()}`, '',
     ...registrationDetails(inquiry).map(([label, value]) => `${label}: ${value}`), '',
-    `University card: ${inquiry.universityCard.name}`, ...(inquiry.paymentProof ? [`Payment proof: ${inquiry.paymentProof.name}`] : []), '',
+    `${inquiry.degree === 'Intermediate' ? 'College / high school card' : 'University card'}: ${inquiry.universityCard.name}`, ...(inquiry.paymentProof ? [`Payment proof: ${inquiry.paymentProof.name}`] : []), '',
     'Local registration record. This is not a payment confirmation.',
     'Access your documents under Privacy note → My registrations. This form has not sent them to the company.',
   ].join('\n')

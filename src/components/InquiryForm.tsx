@@ -13,15 +13,16 @@ function FieldError({ name, errors }: { name: FieldName; errors: FieldErrors }) 
   return errors[name] ? <p id={`${name}-error`} className="field-error">{errors[name]}</p> : null
 }
 
-function DocumentField({ name, label, file, errors, onChange }: { name: FileField; label: string; file: File | null; errors: FieldErrors; onChange: (file: File | null) => void }) {
+function DocumentField({ name, label, help, file, errors, onChange }: { name: FileField; label: string; help?: string; file: File | null; errors: FieldErrors; onChange: (file: File | null) => void }) {
   return (
     <div className="form-field">
       <FieldLabel name={name}>{label}</FieldLabel>
+      {help && <p className="field-help" id={`${name}-help`}>{help}</p>}
       <div className={`document-input ${errors[name] ? 'has-error' : ''}`}>
         <Upload size={18} strokeWidth={1.5} aria-hidden="true" />
         <span className="document-caption"><strong>{file?.name || 'Choose a file'}</strong><small id={`${name}-hint`}>JPG, PNG, WebP or PDF · Up to 5 MB</small></span>
         <span className="document-browse">{file ? 'Replace' : 'Browse'}</span>
-        <input type="file" id={name} name={name} required accept={FILE_ACCEPT} aria-invalid={Boolean(errors[name])} aria-describedby={`${name}-hint${errors[name] ? ` ${name}-error` : ''}`} onChange={event => onChange(event.target.files?.[0] || null)} />
+        <input type="file" id={name} name={name} required accept={FILE_ACCEPT} aria-invalid={Boolean(errors[name])} aria-describedby={`${help ? `${name}-help ` : ''}${name}-hint${errors[name] ? ` ${name}-error` : ''}`} onChange={event => onChange(event.target.files?.[0] || null)} />
       </div>
       <FieldError name={name} errors={errors} />
     </div>
@@ -72,10 +73,19 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
   }, [step])
 
   function update<K extends keyof FormValues>(field: K, value: FormValues[K]) {
-    const next = { ...values, [field]: value }
+    const next = {
+      ...values,
+      [field]: value,
+      ...(field === 'degree' && value === 'Intermediate' ? { semester: '' } : {}),
+    }
     setValues(next)
-    if (errors[field] || field === 'universityCard') {
-      setErrors(previous => ({ ...previous, [field]: validate(next, { requireCategory: step === 'notice' })[field] }))
+    if (errors[field] || field === 'universityCard' || (field === 'degree' && (errors.semester || errors.universityCard))) {
+      const checked = validate(next, { requireCategory: step === 'notice' })
+      setErrors(previous => ({
+        ...previous,
+        [field]: checked[field],
+        ...(field === 'degree' ? { semester: checked.semester, universityCard: errors.universityCard ? checked.universityCard : previous.universityCard } : {}),
+      }))
     }
     if (storageError) setStorageError('')
   }
@@ -187,6 +197,8 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
     )
   }
 
+  const isIntermediate = values.degree === 'Intermediate'
+
   return (
     <section className="form-card" id="inquiry-form" aria-labelledby="form-heading" tabIndex={-1}>
       <div className="form-heading">
@@ -236,7 +248,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
             </div>
             <FieldError name="university" errors={errors} />
           </div>
-          <div className="academic-row">
+          <div className={isIntermediate ? 'academic-row academic-row-single' : 'academic-row'}>
             <div className="form-field">
               <FieldLabel name="degree">Degree program</FieldLabel>
               <div className={`input-wrap ${errors.degree ? 'has-error' : ''}`}>
@@ -247,23 +259,32 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
               </div>
               <FieldError name="degree" errors={errors} />
             </div>
-            <div className="form-field">
-              <FieldLabel name="semester">Current semester</FieldLabel>
-              <div className={`input-wrap ${errors.semester ? 'has-error' : ''}`}>
-                <select {...fieldProps('semester')} onChange={event => update('semester', event.target.value)}>
-                  <option value="" disabled>Select semester</option>
-                  {semesterOptions.map(semester => <option key={semester} value={semester}>Semester {semester}</option>)}
-                </select>
+            {!isIntermediate && (
+              <div className="form-field">
+                <FieldLabel name="semester">Current semester</FieldLabel>
+                <div className={`input-wrap ${errors.semester ? 'has-error' : ''}`}>
+                  <select {...fieldProps('semester')} onChange={event => update('semester', event.target.value)}>
+                    <option value="" disabled>Select semester</option>
+                    {semesterOptions.map(semester => <option key={semester} value={semester}>Semester {semester}</option>)}
+                  </select>
+                </div>
+                <FieldError name="semester" errors={errors} />
               </div>
-              <FieldError name="semester" errors={errors} />
-            </div>
+            )}
           </div>
-          <DocumentField name="universityCard" label="Upload university card" file={values.universityCard} errors={errors} onChange={file => update('universityCard', file)} />
+          <DocumentField
+            name="universityCard"
+            label={isIntermediate ? 'Upload college / high school card' : 'Upload university card'}
+            help="If you don’t have a card, upload your CNIC or Intermediate certificate."
+            file={values.universityCard}
+            errors={errors}
+            onChange={file => update('universityCard', file)}
+          />
         </fieldset>
         {storageError && <div className="storage-error" role="alert">{storageError}</div>}
         <button className="primary-button submit-button" type="submit" disabled={saving}><span><Send size={16} strokeWidth={1.65} />{saving ? 'Saving…' : 'Continue'}</span><ArrowRight size={19} strokeWidth={1.7} /></button>
       </form>
-      <span className="sr-only" id="required-note">All fields are required. Attach your university card to continue to the fee notice and category selection.</span>
+      <span className="sr-only" id="required-note">All fields are required. Attach your student card, CNIC, or Intermediate certificate to continue.</span>
     </section>
   )
 }
