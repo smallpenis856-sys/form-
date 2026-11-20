@@ -184,7 +184,6 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
         <div className="form-heading">
           <div className="form-title-row">
             <h2 id="notice-step-heading" ref={noticeHeadingRef} tabIndex={-1}>Fee &amp; payment notice</h2>
-            <span className="form-number"><span className="tiny-cross">+</span> STEP 02</span>
           </div>
           <p>Review the fee notice, select your university or college category, and confirm to generate your challan.</p>
         </div>
@@ -224,7 +223,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
   return (
     <section className="form-card" id="inquiry-form" aria-labelledby="form-heading" tabIndex={-1}>
       <div className="form-heading">
-        <div className="form-title-row"><h2 id="form-heading">Registration form</h2><span className="form-number"><span className="tiny-cross">+</span> STEP 01</span></div>
+        <div className="form-title-row"><h2 id="form-heading">Registration form</h2></div>
         <p>Enter your contact and academic details below.</p>
       </div>
       <form ref={formRef} noValidate onSubmit={handleContinue} aria-describedby="required-note">
