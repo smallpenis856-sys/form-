@@ -261,7 +261,7 @@ export function InquiryForm({ onSaved, onGenerated }: { onSaved: () => void; onG
           <DocumentField name="universityCard" label="Upload university card" file={values.universityCard} errors={errors} onChange={file => update('universityCard', file)} />
         </fieldset>
         {storageError && <div className="storage-error" role="alert">{storageError}</div>}
-        <button className="primary-button submit-button" type="submit" disabled={saving}><span><Send size={16} strokeWidth={1.65} />{saving ? 'Saving…' : 'Continue to Fee Notice'}</span><ArrowRight size={19} strokeWidth={1.7} /></button>
+        <button className="primary-button submit-button" type="submit" disabled={saving}><span><Send size={16} strokeWidth={1.65} />{saving ? 'Saving…' : 'Continue'}</span><ArrowRight size={19} strokeWidth={1.7} /></button>
       </form>
       <span className="sr-only" id="required-note">All fields are required. Attach your university card to continue to the fee notice and category selection.</span>
     </section>
