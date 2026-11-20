@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ArrowUpRight, ShieldCheck } from 'lucide-react'
 import { ChallanView } from './components/ChallanView'
-import { FieldPoster } from './components/FieldPoster'
 import { InquiryForm } from './components/InquiryForm'
 import { InquiryArchive } from './components/InquiryArchive'
 import { Modal } from './components/Modal'
@@ -48,7 +47,15 @@ function App() {
           <ChallanView inquiry={activeChallan} onAnother={() => setActiveChallan(null)} />
         ) : (
           <div className="contact-layout">
-            <FieldPoster />
+            <div className="form-banner">
+              <img
+                src="/images/registration-poster.jpeg"
+                alt="Introducing Corporate E-Training Program — First Noble Step"
+                width="1600"
+                height="400"
+                fetchPriority="high"
+              />
+            </div>
             <InquiryForm
               onSaved={refresh}
               onGenerated={inquiry => { refresh(); setActiveChallan(inquiry) }}
