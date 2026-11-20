@@ -1,0 +1,53 @@
+import { Crosshair } from 'lucide-react'
+
+function ContourLines() {
+  const paths = Array.from({ length: 19 }, (_, index) => {
+    const r = 30 + index * 13
+    return Array.from({ length: 151 }, (_, point) => {
+      const theta = point / 150 * Math.PI * 2
+      const wave = 1 + .105 * Math.sin(theta * 3 + .5) + .055 * Math.cos(theta * 5 - .9) + .025 * Math.sin(theta * 8)
+      const x = 490 + Math.cos(theta) * r * wave * 1.12
+      const y = -24 + Math.sin(theta) * r * wave * .94
+      return `${point === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`
+    }).join(' ') + 'Z'
+  })
+  return (
+    <svg className="contour-art" viewBox="0 0 500 330" fill="none" aria-hidden="true">
+      <g stroke="currentColor" strokeWidth=".78">{paths.map((d, i) => <path key={i} d={d} />)}</g>
+    </svg>
+  )
+}
+
+function Compass() {
+  return (
+    <svg viewBox="0 0 56 72" className="poster-compass" fill="none" aria-hidden="true">
+      <text x="28" y="11" textAnchor="middle" fill="currentColor" fontFamily="monospace" fontSize="9">N</text>
+      <circle cx="28" cy="42" r="17" stroke="currentColor" strokeWidth=".8" />
+      <path d="M28 18L32 42L28 66L24 42Z" stroke="currentColor" strokeWidth=".9" />
+      <path d="M28 18V42H24Z M28 66V42H32Z" fill="currentColor" />
+      <path d="M6 42H50M28 16V19M28 65V68" stroke="currentColor" strokeWidth=".8" />
+      <circle cx="28" cy="42" r="2" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function FieldPoster() {
+  return (
+    <section className="field-poster" aria-labelledby="contact-heading">
+      <ContourLines />
+      <div className="poster-copy">
+        <div className="poster-eyebrow"><span className="eyebrow-line" />STUDENT REGISTRATION</div>
+        <h1 id="contact-heading">Fill up<br />this form<span className="ochre-dot">.</span></h1>
+        <p>Complete your details to review the fee notice<br className="desktop-break" /> and generate your challan.</p>
+        <Compass />
+      </div>
+      <div className="poster-art">
+        <img src="/images/alpine-field-print.webp" alt="An engraved alpine landscape with pine forests, a winding river, and a golden sun." width="1200" height="800" fetchPriority="high" />
+      </div>
+      <div className="poster-foot">
+        <span><Crosshair size={15} strokeWidth={1.35} /> FIELD SERIES</span>
+        <span>FIG. 01 — ALPINE</span>
+      </div>
+    </section>
+  )
+}
